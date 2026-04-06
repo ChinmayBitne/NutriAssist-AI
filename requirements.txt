@@ -4,5 +4,9 @@ transformers
 accelerate
 bitsandbytes
 huggingface_hub
+google-genai
+Pillow
+pandas
 sentencepiece
+protobuf
 python-dotenv

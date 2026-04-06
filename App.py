@@ -1,110 +1,89 @@
 import streamlit as st
-
 from modules.ai_router import get_response
 from modules.llama_handler import warmup
 
-# ------------------------------------------------------------
-# Page configuration
-# ------------------------------------------------------------
 st.set_page_config(
     page_title="NutriAssist AI",
     page_icon="🥗",
     layout="wide",
 )
 
-# ------------------------------------------------------------
-# Session state
-# ------------------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
 if "model_ready" not in st.session_state:
     st.session_state.model_ready = False
 
-# ------------------------------------------------------------
-# Warm up model once per app session
-# ------------------------------------------------------------
 if not st.session_state.model_ready:
     with st.spinner("Loading NutriAssist model..."):
         warmup()
     st.session_state.model_ready = True
 
-# ------------------------------------------------------------
-# Sidebar
-# ------------------------------------------------------------
 with st.sidebar:
     st.title("🥗 NutriAssist AI")
-    st.caption("AI-powered nutrition chatbot")
+    st.caption("Nutrition chatbot with grounded food facts")
 
     st.markdown("### About")
     st.write(
-        "NutriAssist AI is a simple nutrition chatbot that answers general "
-        "questions about food, healthy eating, calories, and diet basics."
+        "NutriAssist AI now combines local LLM responses with a nutrition dataset"
+        " to answer food-related questions with more grounded facts."
     )
 
-    st.markdown("### What this version focuses on")
+    st.markdown("### Dataset")
     st.write(
-        "- Local LLM-based chat\n"
-        "- Simple conversational interface\n"
-        "- General nutrition guidance"
+        "This version uses the nutrition dataset,"
+        " so the chatbot can cover a broader range of meals."
     )
 
     st.markdown("### Performance")
     st.info(
-        "On lower GPUs or CPU, model loading and responses may take longer. "
-        "On stronger GPUs, the chatbot becomes much faster and smoother."
+        "On lower GPUs or CPU, model loading and replies will take more time. "
+        "On stronger GPUs, the model loads faster and responses feel much smoother."
+    )
+
+    st.markdown("### Sample questions")
+    st.write(
+        "- How many calories are in buttermilk?\n"
+        "- Is paneer good for weight loss?\n"
+        "- Can I eat poha for breakfast?\n"
+        "- Is chicken biryani heavy at night?"
     )
 
     if st.button("Clear chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# ------------------------------------------------------------
-# Main header
-# ------------------------------------------------------------
 st.title("🥗 NutriAssist AI")
-st.caption("Ask simple questions about food, calories, and healthy eating.")
+st.caption("Ask about nutrition, calories, macros, and healthy eating.")
 
-# ------------------------------------------------------------
-# Welcome / empty state
-# ------------------------------------------------------------
 if not st.session_state.messages:
-    st.info("Ask anything about food, nutrition, calories, or healthy eating.")
-
     st.markdown(
-        """
-        ### Try asking:
-        - Is paneer good for weight loss?
-        - Suggest a healthy breakfast
-        - How much protein is in eggs?
-        - What should I eat after workout?
-        """
+        '''
+        ### Welcome
+        This version adds the final combined nutrition dataset for broader and more grounded food answers.
+
+        Try asking:
+        - "How many calories are in buttermilk?"
+        - "How much protein is in almonds?"
+        - "Can I eat poha for breakfast?"
+        - "Is paneer good for weight loss?"
+        - "Can I eat chicken biryani at night?"
+        '''
     )
 
-# ------------------------------------------------------------
-# Render previous chat messages
-# ------------------------------------------------------------
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# ------------------------------------------------------------
-# Chat input
-# ------------------------------------------------------------
-user_input = st.chat_input("Ask about food, calories, or healthy eating...")
+user_input = st.chat_input("Ask a nutrition question...")
 
 if user_input:
-    # Save and show user message
     st.session_state.messages.append({"role": "user", "content": user_input})
-
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Generate assistant response
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             reply = get_response(user_input, st.session_state.messages[:-1])
         st.markdown(reply)
 
-    # Save assistant response
     st.session_state.messages.append({"role": "assistant", "content": reply})
