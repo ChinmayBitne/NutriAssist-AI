@@ -7,6 +7,7 @@ import streamlit as st
 import torch
 from dotenv import load_dotenv
 from huggingface_hub import snapshot_download
+from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 from modules.nutrition_lookup import build_food_context
@@ -15,6 +16,7 @@ load_dotenv()
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 BASE_MODEL_ID = os.getenv("BASE_MODEL_ID", "Qwen/Qwen2.5-3B-Instruct")
+ADAPTER_MODEL_ID = os.getenv("ADAPTER_MODEL_ID", "")
 MODEL_CACHE_DIR = os.getenv("MODEL_CACHE_DIR", str(Path.home() / ".cache" / "nutriassist" / "models"))
 USE_4BIT = os.getenv("USE_4BIT", "true").strip().lower() in {"1", "true", "yes", "on"}
 MAX_INPUT_TOKENS = int(os.getenv("MAX_INPUT_TOKENS", "1200"))
@@ -24,7 +26,7 @@ SYSTEM_PROMPT = (
     "You are NutriAssist, a helpful nutrition assistant. "
     "Answer clearly, simply, and naturally. "
     "Use nutrition facts from the provided dataset context when they are available. "
-    "If there is no dataset context, still answer using general nutrition knowledge. "
+    "Prefer practical food guidance and concise nutrition reasoning. "
     "Do not diagnose disease or replace a doctor or dietitian."
 )
 
@@ -35,24 +37,29 @@ def _safe_local_dir(repo_id: str) -> str:
     return os.path.join(MODEL_CACHE_DIR, repo_id.replace("/", "__"))
 
 @st.cache_resource(show_spinner=True)
-def _download_and_load():
+def _download_base_and_optional_adapter():
     os.makedirs(MODEL_CACHE_DIR, exist_ok=True)
-    local_dir = snapshot_download(
+
+    base_dir = snapshot_download(
         repo_id=BASE_MODEL_ID,
         local_dir=_safe_local_dir(BASE_MODEL_ID),
         **_hf_kwargs(),
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(local_dir, use_fast=True)
+    adapter_dir = None
+    if ADAPTER_MODEL_ID:
+        adapter_dir = snapshot_download(
+            repo_id=ADAPTER_MODEL_ID,
+            local_dir=_safe_local_dir(ADAPTER_MODEL_ID),
+            **_hf_kwargs(),
+        )
+
+    tokenizer = AutoTokenizer.from_pretrained(base_dir, use_fast=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
 
-    load_kwargs = {
-        "device_map": "auto",
-        "low_cpu_mem_usage": True,
-    }
-
+    load_kwargs = {"device_map": "auto", "low_cpu_mem_usage": True}
     if torch.cuda.is_available():
         if USE_4BIT:
             load_kwargs["quantization_config"] = BitsAndBytesConfig(
@@ -66,24 +73,22 @@ def _download_and_load():
     else:
         load_kwargs["torch_dtype"] = torch.float32
 
-    model = AutoModelForCausalLM.from_pretrained(local_dir, **load_kwargs)
+    model = AutoModelForCausalLM.from_pretrained(base_dir, **load_kwargs)
+    if adapter_dir:
+        model = PeftModel.from_pretrained(model, adapter_dir)
     model.eval()
     return model, tokenizer
 
 def warmup():
-    _download_and_load()
+    _download_base_and_optional_adapter()
 
 def generate(user_input: str, history: list) -> str:
-    model, tokenizer = _download_and_load()
+    model, tokenizer = _download_base_and_optional_adapter()
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-
     food_context = build_food_context(user_input)
     if food_context:
-        messages.append({
-            "role": "system",
-            "content": "Nutrition dataset context:\n" + food_context,
-        })
+        messages.append({"role": "system", "content": "Nutrition dataset context:\n" + food_context})
 
     for msg in history[-6:]:
         role = msg.get("role", "user")
@@ -92,20 +97,9 @@ def generate(user_input: str, history: list) -> str:
             messages.append({"role": role, "content": content})
 
     messages.append({"role": "user", "content": user_input})
+    prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
-    prompt = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
-
-    inputs = tokenizer(
-        prompt,
-        return_tensors="pt",
-        truncation=True,
-        max_length=MAX_INPUT_TOKENS,
-    )
-
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=MAX_INPUT_TOKENS)
     if torch.cuda.is_available():
         try:
             inputs = {k: v.to("cuda") for k, v in inputs.items()}
@@ -117,7 +111,7 @@ def generate(user_input: str, history: list) -> str:
             **inputs,
             max_new_tokens=MAX_NEW_TOKENS,
             do_sample=True,
-            temperature=0.25,
+            temperature=0.2,
             top_p=0.85,
             repetition_penalty=1.05,
             pad_token_id=tokenizer.pad_token_id,

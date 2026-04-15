@@ -28,7 +28,6 @@ def load_db() -> pd.DataFrame:
 
     df["Food"] = df["Food"].astype(str).str.strip()
     df["Measure"] = df["Measure"].fillna("").astype(str).str.strip()
-
     df = df[df["Food"] != ""].copy()
     return df[USEFUL_COLUMNS].reset_index(drop=True)
 
@@ -39,7 +38,6 @@ def search_food(query: str, top_n: int = 3) -> pd.DataFrame:
 
     q = query.lower().strip()
     contains = db[db["Food"].str.lower().str.contains(q, na=False, regex=False)].copy()
-
     if not contains.empty:
         return contains.head(top_n).reset_index(drop=True)
 
@@ -69,19 +67,11 @@ def build_food_context(query: str) -> str:
             ("Calories", "calories", ""),
             ("Protein", "protein", "g"),
             ("Fat", "fat", "g"),
-            ("Sat.Fat", "sat fat", "g"),
             ("Fiber", "fiber", "g"),
             ("Carbs", "carbs", "g"),
-            ("Free Sugar (g)", "free sugar", "g"),
-            ("Sodium (mg)", "sodium", "mg"),
-            ("Calcium (mg)", "calcium", "mg"),
-            ("Iron (mg)", "iron", "mg"),
-            ("Vitamin C (mg)", "vitamin C", "mg"),
-            ("Folate (µg)", "folate", "µg"),
         ]:
             val = _fmt(row.get(col))
             if val is not None:
                 facts.append(f"{label}: {val}{unit}")
         lines.append(f"{food} | measure: {measure} | " + ", ".join(facts))
-
     return "\n".join(lines)

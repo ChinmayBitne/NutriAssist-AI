@@ -20,18 +20,18 @@ if not st.session_state.model_ready:
 
 with st.sidebar:
     st.title("🥗 NutriAssist AI")
-    st.caption("Nutrition chatbot with grounded food facts")
+    st.caption("Nutrition chatbot with fine-tuned response behavior")
 
     st.markdown("### About")
     st.write(
-        "NutriAssist AI now combines local LLM responses with a nutrition dataset"
-        " to answer food-related questions with more grounded facts."
+        "NutriAssist AI now uses a fine-tuned nutrition model so that responses are "
+        "more aligned with food questions and nutrition dialogue."
     )
 
-    st.markdown("### Dataset")
+    st.markdown("### Fine-tuning")
     st.write(
-        "This version uses the nutrition dataset,"
-        " so the chatbot can cover a broader range of meals."
+        "This stage uses a LoRA adapter trained on nutrition-oriented prompts built "
+        "from the project dataset."
     )
 
     st.markdown("### Performance")
@@ -42,9 +42,9 @@ with st.sidebar:
 
     st.markdown("### Sample questions")
     st.write(
-        "- How many calories are in buttermilk?\n"
         "- Is paneer good for weight loss?\n"
         "- Can I eat poha for breakfast?\n"
+        "- Suggest a healthy breakfast\n"
         "- Is chicken biryani heavy at night?"
     )
 
@@ -59,14 +59,13 @@ if not st.session_state.messages:
     st.markdown(
         '''
         ### Welcome
-        This version adds the final combined nutrition dataset for broader and more grounded food answers.
+        This version introduces a fine-tuned nutrition model for better food-oriented conversation quality.
 
         Try asking:
-        - "How many calories are in buttermilk?"
-        - "How much protein is in almonds?"
-        - "Can I eat poha for breakfast?"
         - "Is paneer good for weight loss?"
-        - "Can I eat chicken biryani at night?"
+        - "Suggest a healthy breakfast"
+        - "Can I eat poha if I want a lighter meal?"
+        - "Is chicken biryani heavy before sleep?"
         '''
     )
 
