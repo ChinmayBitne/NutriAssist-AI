@@ -1,138 +1,87 @@
-# 🥗 NutriAssist AI (V3)
+# 🥗 NutriAssist AI (V4)
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue) ![Streamlit](https://img.shields.io/badge/Streamlit-Latest-red) ![License](https://img.shields.io/badge/License-MIT-green)
 
-NutriAssist AI is a conversational nutrition assistant that helps users ask questions about food, calories, macros, and healthier eating choices.
-
-V3 combines two layers:
-- a local chat model for natural conversation
-- dataset grounding with optional fine-tuned LoRA behavior
-
-This keeps responses practical, food-aware, and better aligned with nutrition use cases.
+NutriAssist AI is a conversational nutrition assistant and meal tracker. V4 brings together a fine-tuned nutrition chatbot and a practical daily meal logging system—making it a real product for anyone interested in food, macros, and healthy eating.
 
 ---
 
-## 🚀 Overview
+## 🚀 What's New in V4
 
-NutriAssist AI provides:
-
-* 💬 A chat interface for nutrition-related questions
-* 🤖 Local language model inference
-* 🧠 Optional LoRA adapter support for fine-tuned response behavior
-* 📊 Nutrition dataset lookup for grounded answers
-* 🇮🇳 Better food coverage, including Indian dishes in the dataset
-* ⚡ GPU-friendly inference with optional 4-bit loading
-* 🧱 A modular structure ready for future features
-
----
-
-## 🆕 What's New in V3
-
-Compared to V2, this version adds and improves:
-
-* Optional LoRA adapter loading through `ADAPTER_MODEL_ID`
-* Fine-tuning-oriented response behavior in the model pipeline
-* Updated UI copy and prompts focused on nutrition dialogue quality
-* Continued grounding through `data/nutrients.csv`
-
-V1 repository: [NutriAssist-AI (V1)](https://github.com/ChinmayBitne/NutriAssist-AI)
-
----
-
-## 📈 Results: Before vs After Fine-tuning
-
-In internal testing on food-oriented prompts, V3 responses were more aligned and practical than base-model-only outputs.
-
-**Before fine-tuning (base model only):**
-- More generic nutrition advice
-- Less consistent handling of Indian food queries
-- Weaker use of dataset-style factual framing
-
-**After fine-tuning (V3 with optional adapter):**
-- More task-aligned nutrition responses
-- Better handling of common Indian meal questions
-- Cleaner and more direct food guidance
-
-> Note: Exact gains depend on the adapter used, prompt style, and hardware setup.
+- 🍽️ **Meal Tracker:** Log foods, track daily calories, protein, fat, carbs, and fiber
+- 🔍 **Food Search:** Search and preview nutrition for thousands of foods (Indian + global)
+- 🧠 **Fine-tuned Chatbot:** Ask questions, get grounded answers, and practical food advice
+- 📊 **Live Nutrition Totals:** See your daily intake vs. goals, with progress bars
+- 🧩 **Modular & Extensible:** Clean codebase, ready for more features (image input, export, etc.)
+- ⚡ **Fast Local Inference:** GPU/CPU support, 4-bit quantization, and model caching
 
 ---
 
 ## 🧠 How It Works
 
-```text
-User Input -> Streamlit UI -> AI Router -> Nutrition Lookup -> Base Model (+ Optional LoRA Adapter) -> Response -> UI
-```
+The app has two main tabs:
 
-### Core flow
+**💬 Chat:**
+- Ask nutrition questions in natural language
+- Get responses grounded in a real nutrition dataset and fine-tuned model
 
-1. User asks a nutrition-related question
-2. The system searches `data/nutrients.csv` for matching foods
-3. Nutrition facts are injected into prompt context
-4. The base model generates a response (with optional LoRA adapter loaded)
-5. The final answer is shown in the chat interface
+**🍽️ Meal Tracker:**
+- Search foods, preview nutrition, and log meals by quantity (grams)
+- Track daily totals for calories, protein, fat, carbs, and fiber
+- Remove items or clear your log any time
+
+All data is local—no cloud or external API required for chat or tracking.
 
 ---
 
+
 ## 📸 Demo
 
-![Demo](assets/Demo.png)
+![Chat Demo](assets/Demo1.png)
+---
+![Meal Tracker Demo](assets/Demo2.png)
 
 ---
 
 ## 🏗️ Architecture
 
-### Main components
+**App.py**
+- Streamlit UI with two tabs: Chat and Meal Tracker
+- Handles session state, chat history, and meal log
 
-* **App.py**
-  * Builds the Streamlit chatbot interface
-  * Manages chat history in session state
-  * Warms the model once at startup
+**modules/ai_router.py**
+- Routes user queries to the model
 
-* **modules/ai_router.py**
-  * Routes user queries to the generation layer
+**modules/llama_handler.py**
+- Loads base model and optional fine-tuned adapter
+- Handles prompt formatting and generation
 
-* **modules/nutrition_lookup.py**
-  * Loads and searches the nutrition dataset
-  * Applies exact contains match + fuzzy fallback
-  * Builds compact nutrition context for prompting
+**modules/nutrition_lookup.py**
+- Loads and searches the nutrition dataset
+- Builds context for both chat and tracker
 
-* **modules/llama_handler.py**
-  * Downloads/caches base model from Hugging Face
-  * Optionally downloads and loads a PEFT LoRA adapter
-  * Runs generation with conversation + dataset context
+**modules/meal_tracker.py**
+- Food search, nutrition preview, meal logging, daily totals, and log management
 
-* **notebook/Nutrition Assist Finetune Notebook.ipynb**
-  * Fine-tuning workflow notebook used for adapter training experiments
+**data/nutrients.csv**
+- Combined, cleaned nutrition dataset (Indian + global foods)
 
----
-
-## ✅ Prerequisites
-
-Before you begin, ensure you have:
-
-- **Python 3.10 or higher**
-- **pip**
-- **Git** (optional)
-- **Hugging Face account** (recommended, especially for gated model access)
-
-Hardware recommendations:
-- **Minimum**: 8GB RAM, CPU only (slower responses)
-- **Recommended**: CUDA-capable GPU
-- **Optimal**: 12GB+ VRAM for smoother larger-model inference
+**notebook/Nutrition Assist Finetune Notebook.ipynb**
+- Fine-tuning workflow for LoRA adapters
 
 ---
 
 ## ⚙️ Setup
 
-### 1. Install dependencies
+1. **Install dependencies**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment
+2. **Configure environment**
 
-Create a `.env` file in the project root with V3 keys:
+Create a `.env` file in the project root:
 
 ```env
 HF_TOKEN=your_huggingface_token_here
@@ -144,97 +93,24 @@ MAX_INPUT_TOKENS=1200
 MAX_NEW_TOKENS=140
 ```
 
-Notes:
-- `ADAPTER_MODEL_ID` is optional. Leave it blank to run base model only.
-- If your `.env.example` contains older keys, prefer the keys above because they match the current V3 code.
-
-### 3. Run the app
+3. **Run the app**
 
 ```bash
 streamlit run App.py
 ```
 
-Default URL: `http://localhost:8501`
-
----
-
-## 🧪 Fine-tuning
-
-Fine-tuning experiments are documented in:
-
-```text
-notebook/Nutrition Assist Finetune Notebook.ipynb
-```
-
-Typical workflow:
-
-* prepare nutrition Q&A style examples
-* train a LoRA adapter on top of the base model
-* publish or save the adapter
-* load it at runtime using `ADAPTER_MODEL_ID`
-
----
-
-## 📊 Dataset
-
-The grounding dataset is:
-
-```text
-data/nutrients.csv
-```
-
-The app uses it to inject factual values such as calories, protein, fat, fiber, and carbs into generation context.
-
----
-
-## ⚡ Performance
-
-This project runs a local model, so hardware matters.
-
-* On lower GPUs or CPU, startup and responses may take longer
-* On stronger GPUs, responses are faster and smoother
-
-Current optimization choices:
-
-* local model caching via Hugging Face snapshot download
-* optional 4-bit quantization when CUDA is available
-* short conversation history window
-* lightweight dataset retrieval before generation
-* optional adapter-based fine-tuned inference
+Default: [http://localhost:8501](http://localhost:8501)
 
 ---
 
 ## 🛠️ Troubleshooting
 
-### Model download fails
-- Verify `HF_TOKEN`
-- Confirm model/adaptor access on Hugging Face
-
-### Adapter fails to load
-- Verify `ADAPTER_MODEL_ID` points to a valid PEFT adapter repository
-- Leave `ADAPTER_MODEL_ID` blank to test base-model-only mode
-
-### Missing PEFT package
-- If you see `ModuleNotFoundError: peft`, install it with:
-
-```bash
-pip install peft
-```
-
-### Out of memory (OOM)
-- Keep `USE_4BIT=true`
-- Reduce `MAX_INPUT_TOKENS` and `MAX_NEW_TOKENS`
-- Use a smaller base model
-
-### Slow responses
-- Expected on CPU for larger models
-- Use a CUDA-enabled GPU or smaller model
-
-### Port already in use
-
-```bash
-streamlit run App.py --server.port 8502
-```
+- **Model download fails:** Check `HF_TOKEN` and Hugging Face access
+- **Adapter fails to load:** Check `ADAPTER_MODEL_ID` or leave blank for base model
+- **Missing PEFT:** `pip install peft`
+- **Out of memory:** Use 4-bit, reduce tokens, or try a smaller model
+- **Slow on CPU:** Use a CUDA GPU or smaller model
+- **Port in use:** `streamlit run App.py --server.port 8502`
 
 ---
 
@@ -246,9 +122,10 @@ NutriAssist-AI/
 |-- App.py
 |-- requirements.txt
 |-- README.md
-|-- README_v3.md
 |-- .env.example
 |-- assets/
+|   |-- Demo1.png
+|   |-- Demo2.png
 |   |-- Demo.png
 |-- data/
 |   |-- nutrients.csv
@@ -256,26 +133,49 @@ NutriAssist-AI/
 |   |-- ai_router.py
 |   |-- llama_handler.py
 |   |-- nutrition_lookup.py
+|   |-- meal_tracker.py
 |-- notebook/
 |   |-- Nutrition Assist Finetune Notebook.ipynb
 ```
+
+
+## ⚡ Performance
+
+NutriAssist AI runs a local LLM and all meal tracking logic on your device. Performance depends on your hardware:
+
+- **Minimum:** 8GB RAM, CPU (slower responses, but works for chat and tracking)
+- **Recommended:** CUDA-capable GPU (NVIDIA), 12GB+ VRAM for smoothest experience
+- **Optimizations:**
+	- 4-bit quantization for lower memory usage
+	- Model and dataset caching for faster startup
+	- Short conversation history for quick inference
+	- Efficient food search and logging (instant, even on large datasets)
+
+**Tips:**
+- On CPU, expect slower model responses (meal tracking is always instant)
+- On GPU, responses are fast and smooth
+- Reduce `MAX_INPUT_TOKENS` and `MAX_NEW_TOKENS` in `.env` for lower memory use
 
 ---
 
 ## 🎯 Current Focus
 
-* Improve nutrition response quality through fine-tuned behavior
-* Combine dataset grounding with conversational usefulness
-* Keep architecture simple and extensible for future product features
+- Delivering a seamless, local-first nutrition assistant and meal tracker
+- Improving food search, logging, and daily nutrition feedback
+- Ensuring the codebase is modular and ready for rapid feature expansion
+- Gathering user feedback for real-world nutrition and meal tracking needs
 
 ---
 
 ## 🔮 Future Enhancements
 
-* Meal tracking and nutrition analysis workflows
-* Food image understanding features
-* User-aware conversational memory
-* Faster and richer UI interactions
+- 📱 **Mobile-friendly UI:** Responsive design for phones/tablets
+- 📤 **Export meal logs:** Download your data as CSV/JSON
+- 🧠 **Personalized goals:** User profiles, adaptive nutrition targets
+- 📸 **Food image input:** Vision model for food recognition
+- 🏆 **Streaks & gamification:** Reminders, achievements, and progress tracking
+- 🧩 **Plugin/extensions:** Add-ons for recipes, micronutrients, or custom analytics
+- ☁️ **Optional cloud sync:** (future) for multi-device support
 
 ---
 
@@ -287,6 +187,5 @@ Developed by **Chinmay Bitne**
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT License. For the base model (Qwen2.5-3B-Instruct), see: [Qwen License](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct)
 
-For the base model (Qwen2.5-3B-Instruct), refer to: [Qwen License](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct)
