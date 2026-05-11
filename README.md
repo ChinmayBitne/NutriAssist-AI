@@ -25,15 +25,6 @@ NutriAssist AI is a full-stack AI-powered nutrition assistant that combines:
 
 Designed as a **real-world AI product demo**, not just a chatbot.
 
----
-
-## 🎥 Demo
-
-
-![Demo GIF](assets/demo.gif)
-
----
-
 ## 🖼️ Screenshots
 
 ### 🖼️ Chat Interface
